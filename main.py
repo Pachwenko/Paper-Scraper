@@ -1,10 +1,7 @@
-import urllib
-import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import time
 import sqlite3
-import datetime as dt
 
 """
 Steps of scraping our wallpaper database images:
@@ -31,16 +28,18 @@ Helpful links:
     the href and prepend https://unsplash.com and then append /download?force=true to download it
 """
 
-database_filepath = 'database.db'
+database_filepath = "database.db"
 # key represents the table name, value represents the actual url endpoint for that collection
 # TODO: refactor this to support other websites than unsplash
-collection_to_scrape = {'dark_and_moody': '/762960/dark-and-moody',
-                        'background_textures': '/1368747/backgrounds-textures'}
+collection_to_scrape = {
+    "dark_and_moody": "/762960/dark-and-moody",
+    "background_textures": "/1368747/backgrounds-textures",
+}
 bottom_page_y_pos = 175000
-scroll_to_bottom = 'window.scrollBy(659, ' + str(bottom_page_y_pos) + ')'
-base_url = 'https://unsplash.com'
-collections_url = '/collections'
-download_url = '/download?force=true'
+scroll_to_bottom = "window.scrollBy(659, " + str(bottom_page_y_pos) + ")"
+base_url = "https://unsplash.com"
+collections_url = "/collections"
+download_url = "/download?force=true"
 
 
 class PaperScraper:
@@ -54,7 +53,9 @@ class PaperScraper:
     def __init__(self):
         # create the database
         # use parse decltypes for python datetime objects, and insert as dt.datetime()
-        self.db = sqlite3.connect(database_filepath, detect_types=sqlite3.PARSE_DECLTYPES)
+        self.db = sqlite3.connect(
+            database_filepath, detect_types=sqlite3.PARSE_DECLTYPES
+        )
         self.cursor = self.db.cursor()
         self.create_tables()
         self.scrape()
@@ -66,15 +67,21 @@ class PaperScraper:
             for link in links:
                 # insert all the links into the table categorized by collection
                 download_link = base_url + link + download_url
-                statement = '''INSERT INTO {}(url, lastUsed) VALUES("{}", "0")'''.format(collection, download_link)
-                print('Statement is: {}'.format(statement))
+                statement = (
+                    """INSERT INTO {}(url, lastUsed) VALUES("{}", "0")""".format(
+                        collection, download_link
+                    )
+                )
+                print("Statement is: {}".format(statement))
                 self.db.execute(statement)
             self.db.commit()
 
     def create_tables(self):
         for collection in collection_to_scrape:
-            statement = '''CREATE TABLE if not exists {}(id INTEGER PRIMARY KEY, url TEXT, lastUsed TIMESTAMP)
-                '''.format(collection)
+            statement = """CREATE TABLE if not exists {}(id INTEGER PRIMARY KEY, url TEXT, lastUsed TIMESTAMP)
+                """.format(
+                collection
+            )
             print(statement)
             try:
                 self.db.execute(statement)
@@ -85,17 +92,17 @@ class PaperScraper:
 
     def get_image_links(self, url):
         html = self.get_page_html(url)
-        soup = BeautifulSoup(html, 'html.parser')
-        anchors = soup.find_all('a', class_='_2Mc8_')
-        print('num anchors found: {}'.format(anchors.__len__()))
+        soup = BeautifulSoup(html, "html.parser")
+        anchors = soup.find_all("a", class_="_2Mc8_")
+        print("num anchors found: {}".format(anchors.__len__()))
         anchor_list = []
         for anchor in anchors:
-            anchor_list.append(anchor.get('href'))
+            anchor_list.append(anchor.get("href"))
 
         return anchor_list
 
     def get_page_html(self, url):
-        # Since this webpage has to load a shitload of images and have lots of javascript
+        # Since this webpage has to load a lot of images and have lots of javascript
         # we got to be careful with load times and selenium going real fast
         # How it works:
         # - Load website, wait for page to load
@@ -110,12 +117,12 @@ class PaperScraper:
 
         time.sleep(2)
 
-        driver.execute_script('window.scrollBy(659, 1393)')
+        driver.execute_script("window.scrollBy(659, 1393)")
         #
         # from selenium.webdriver.common.action_chains import ActionChains
         # ActionChains(driver).move_to_element(button).perform()
         time.sleep(2)
-        driver.execute_script('window.scrollBy(659, 1393)')
+        driver.execute_script("window.scrollBy(659, 1393)")
 
         button.click()
 
@@ -136,7 +143,5 @@ def main():
     scraper = PaperScraper()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-
-
